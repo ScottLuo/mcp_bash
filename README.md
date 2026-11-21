@@ -65,6 +65,19 @@ file bin/mcp_bash
 
 ## Packaging for Release
 
+### Automated (CI/CD)
+
+Pushing to `main` automatically triggers a release via [.github/workflows/release.yml](.github/workflows/release.yml):
+
+1. Reads the latest semver tag (`v*.*.*`) from git history and increments the patch number.
+2. Cross-compiles a static `linux/amd64` binary with the version injected via `-ldflags`.
+3. Packages the binary and `tool.yaml` into `mcp_bash-linux-amd64.tar.gz`.
+4. Creates a GitHub Release with the new tag and attaches the package.
+
+No manual steps are required for routine releases.
+
+### Manual (fallback)
+
 The release archive must contain the compiled binary and `tool.yaml`.
 
 ```bash
@@ -135,6 +148,9 @@ golangci-lint run
 │   ├── compress.go  # AutoCompressShellOutput + sub-functions
 │   ├── bash_test.go # unit tests for Bash
 │   └── compress_test.go # unit tests for compression
+├── .github/
+│   └── workflows/
+│       └── release.yml # CI/CD: auto-increment version, build, release on push to main
 ├── tool.yaml        # runtime contract
 └── README.md
 ```
