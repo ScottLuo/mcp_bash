@@ -21,7 +21,9 @@ import (
 )
 
 // version is the semantic version of the mcp_bash server.
-const version = "0.1.0"
+// It can be overridden at build time via:
+//   -ldflags "-X main.version=vX.Y.Z"
+var version = "0.1.0"
 
 // validLogLevels is the set of accepted LOG_LEVEL values.
 var validLogLevels = map[string]bool{

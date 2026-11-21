@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Determine next version
+        id: version
+        run: |
+          LATEST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            # No semver tags exist yet; start from v0.1.0 -> v0.1.1
+            NEXT_VERSION="v0.1.1"
+          else
+            # Strip 'v' prefix and parse MAJOR.MINOR.PATCH
+            VERSION="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+            NEXT_PATCH=$((PATCH + 1))
+            NEXT_VERSION="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          fi
+          echo "version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: ${LATEST_TAG:-<none>}"
+          echo "Next release version: ${NEXT_VERSION}"
+
+      - name: Build binary
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.version }}" \
+            -o bin/mcp_bash .
+
+      - name: Create release package
+        run: |
+          mkdir -p release/
+          cp bin/mcp_bash release/
+          cp tool.yaml release/
+          chmod +x release/mcp_bash
+          tar -czf mcp_bash-linux-amd64.tar.gz -C release .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: mcp_bash-linux-amd64.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: false
