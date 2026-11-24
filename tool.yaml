@@ -1,6 +1,6 @@
 language: go
 kind: compiled
-entrypoint: ./bin/mcp_bash
+entrypoint: ./mcp_bash
 env:
   LOG_LEVEL: "INFO"
 timeout_seconds: 30
